@@ -9,7 +9,7 @@ export default async function RelayReportPage({ params }: { params: { id: string
 
   try {
     relay = await getRelay(params.id);
-    reports = await getRelayReports(params.id);
+    reports = (await getRelayReports(params.id)) ?? [];
   } catch {
     notFound();
   }

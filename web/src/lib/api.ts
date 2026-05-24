@@ -77,10 +77,15 @@ export interface MetricsResponse {
   }>;
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+function getApiUrl() {
+  if (typeof window === 'undefined') {
+    return process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+  }
+  return process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+}
 
 async function fetchJSON<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, { next: { revalidate: 60 } });
+  const res = await fetch(`${getApiUrl()}${path}`, { next: { revalidate: 60 } });
   if (!res.ok) {
     throw new Error(`API ${path}: ${res.status}`);
   }

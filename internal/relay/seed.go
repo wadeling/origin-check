@@ -116,6 +116,15 @@ func Seed(ctx context.Context, st *store.Store, enc *crypto.Encryptor, sf SeedFi
 			Status:            store.RelayActive,
 			Tags:              seed.Tags,
 		}
+		if r.BackupAPIBaseURLs == nil {
+			r.BackupAPIBaseURLs = []string{}
+		}
+		if r.ClaimedModels == nil {
+			r.ClaimedModels = []string{}
+		}
+		if r.Tags == nil {
+			r.Tags = []string{}
+		}
 		if err := st.UpsertRelay(ctx, r); err != nil {
 			return err
 		}

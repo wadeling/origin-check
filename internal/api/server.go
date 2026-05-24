@@ -57,6 +57,9 @@ func (s *Server) handleListRelays(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+	if summaries == nil {
+		summaries = []store.RelaySummary{}
+	}
 	writeJSON(w, http.StatusOK, summaries)
 }
 
@@ -82,6 +85,9 @@ func (s *Server) handleGetRelay(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
+	}
+	if results == nil {
+		results = []store.ProbeResult{}
 	}
 
 	avail, _ := s.store.ComputeAvailability24h(r.Context(), id)
@@ -140,6 +146,9 @@ func (s *Server) handleRelayReports(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusInternalServerError, err)
 		return
 	}
+	if reports == nil {
+		reports = []store.AuthenticityReport{}
+	}
 	writeJSON(w, http.StatusOK, reports)
 }
 
@@ -148,6 +157,9 @@ func (s *Server) handleLeaderboard(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return
+	}
+	if summaries == nil {
+		summaries = []store.RelaySummary{}
 	}
 	writeJSON(w, http.StatusOK, summaries)
 }
