@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { AuthenticityReportView } from '@/components/AuthenticityReportView';
-import { getRelay, getRelayReports } from '@/lib/api';
+import { getRelay, getRelayReports, formatDateTimeCST } from '@/lib/api';
 
 export default async function RelayReportPage({ params }: { params: { id: string } }) {
   let relay;
@@ -31,7 +31,7 @@ export default async function RelayReportPage({ params }: { params: { id: string
           {reports.map((report) => (
             <section key={report.id} className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
               <h2 className="text-sm font-medium text-muted">
-                {new Date(report.created_at).toLocaleString('zh-CN')}
+                {formatDateTimeCST(report.created_at)}
               </h2>
               <div className="mt-4">
                 <AuthenticityReportView report={report} />

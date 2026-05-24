@@ -59,7 +59,16 @@ cd web && npm install && npm run dev
 docker compose up --build
 ```
 
-## 收录的中转站
+## 评测模型（主流旗舰）
+
+性能与真伪探测覆盖以下模型（不含 DeepSeek 等国内模型及 gpt-4o / sonnet-4.5 / gemini-2.0 等旧版）：
+
+| 系列 | 模型 ID |
+|------|---------|
+| GPT-5.5 | `gpt-5.5`, `gpt-5.5-pro` |
+| Claude Opus 4.7 | `claude-opus-4-7` |
+| Gemini 3.x | `gemini-3.1-pro-preview` |
+| 可用性探测（轻量） | `gpt-5.4-mini` |
 
 | 名称 | 官网 | API Base |
 |------|------|----------|
@@ -78,5 +87,5 @@ docker compose up --build
 ## 调度策略
 
 - Health：每 15 分钟
-- Performance：每 6 小时
-- Authenticity：每天 03:00
+- Performance：每 6 小时（整点）
+- Authenticity：每 6 小时（整点后 30 分），启动时立即跑一轮

@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { AuthenticityReportView } from '@/components/AuthenticityReportView';
 import { MetricsChart } from '@/components/MetricsChart';
 import { VerdictBadge } from '@/components/RelayTable';
-import { formatMs, formatPct, getRelay, getRelayMetrics } from '@/lib/api';
+import { formatMs, formatPct, formatDateTimeCST, getRelay, getRelayMetrics } from '@/lib/api';
 
 export default async function RelayDetailPage({ params }: { params: { id: string } }) {
   let data;
@@ -82,7 +82,7 @@ export default async function RelayDetailPage({ params }: { params: { id: string
             <tbody>
               {recent_results.map((r) => (
                 <tr key={r.id} className="border-b border-slate-100">
-                  <td className="py-2 pr-4">{new Date(r.created_at).toLocaleString('zh-CN')}</td>
+                  <td className="py-2 pr-4">{formatDateTimeCST(r.created_at)}</td>
                   <td className="py-2 pr-4">{r.probe_type}</td>
                   <td className="py-2 pr-4">{r.model}</td>
                   <td className="py-2 pr-4">{formatMs(r.ttft_ms)}</td>

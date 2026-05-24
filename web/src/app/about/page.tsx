@@ -25,8 +25,8 @@ export default function AboutPage() {
       <h2>调度策略</h2>
       <ul>
         <li>Health 探测：每 15 分钟</li>
-        <li>Performance 探测：每 6 小时</li>
-        <li>Authenticity 鉴定：每天 03:00</li>
+        <li>Performance 探测：每 6 小时（整点）</li>
+        <li>Authenticity 鉴定：每 6 小时（整点后 30 分），启动时立即跑一轮</li>
       </ul>
 
       <p className="text-sm text-muted">评测结果仅供参考，不构成商业指控。</p>

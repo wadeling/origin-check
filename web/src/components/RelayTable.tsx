@@ -30,7 +30,7 @@ export function RelayTable({ relays }: { relays: RelaySummary[] }) {
                 <Link href={`/relays/${relay.id}`} className="font-medium text-accent hover:underline">
                   {relay.name}
                 </Link>
-                <div className="mt-1 text-xs text-muted">{relay.claimed_models.slice(0, 3).join(', ')}</div>
+                <div className="mt-1 text-xs text-muted">{relay.claimed_models.join(', ')}</div>
               </td>
               <td className="px-4 py-4">
                 <VerdictBadge verdict={relay.authenticity_verdict} />

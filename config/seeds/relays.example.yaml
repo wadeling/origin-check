@@ -7,8 +7,8 @@ relays:
       - https://ai.liaobots2.work/v1
     auth_type: login_code
     api_key_env: LIAOBOTS_API_KEY
-    claimed_models: [gpt-4o, claude-sonnet-4-5, gemini-2.0-flash]
-    health_model: gpt-4o-mini
+    claimed_models: [gpt-5.5, gpt-5.5-pro, claude-opus-4-7, gemini-3.1-pro-preview]
+    health_model: gpt-5.4-mini
     tags: [聚合网关]
 
   - name: 灵芽 API
@@ -16,8 +16,8 @@ relays:
     api_base_url: https://api.lingyaai.cn/v1
     auth_type: bearer_token
     api_key_env: LINGYAAI_API_KEY
-    claimed_models: [gpt-4o, claude-sonnet-4, deepseek-chat]
-    health_model: gpt-4o-mini
+    claimed_models: [gpt-5.5, gpt-5.5-pro, claude-opus-4-7, gemini-3.1-pro-preview]
+    health_model: gpt-5.4-mini
     tags: [One-API]
 
   - name: Asiai Cloud
@@ -25,8 +25,8 @@ relays:
     api_base_url: https://api.asiai.cloud/v1
     auth_type: bearer_token
     api_key_env: ASIAI_API_KEY
-    claimed_models: [gpt-4o]
-    health_model: gpt-4o-mini
+    claimed_models: [gpt-5.5, gpt-5.5-pro, claude-opus-4-7, gemini-3.1-pro-preview]
+    health_model: gpt-5.4-mini
     tags: [待验证]
 
   - name: NiceGoal
@@ -34,6 +34,6 @@ relays:
     api_base_url: https://www.nicegoal.ai/v1
     auth_type: bearer_token
     api_key_env: NICEGOAL_API_KEY
-    claimed_models: [gpt-4o]
-    health_model: gpt-4o-mini
+    claimed_models: [gpt-5.5, gpt-5.5-pro, claude-opus-4-7, gemini-3.1-pro-preview]
+    health_model: gpt-5.4-mini
     tags: [New API]

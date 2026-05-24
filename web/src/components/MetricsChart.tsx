@@ -10,13 +10,13 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
-import type { MetricsResponse } from '@/lib/api';
+import { formatTimeCST, type MetricsResponse } from '@/lib/api';
 
 export function MetricsChart({ metrics }: { metrics: MetricsResponse }) {
   const data = metrics.hourly
     .filter((p) => p.probe_count > 0)
     .map((p) => ({
-      time: new Date(p.time).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+      time: formatTimeCST(p.time),
       ttft: p.avg_ttft,
       latency: p.avg_latency,
       availability: p.availability,

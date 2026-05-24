@@ -130,3 +130,30 @@ export function formatPct(v?: number | null) {
   if (v == null) return '—';
   return `${v.toFixed(1)}%`;
 }
+
+const cstOptions: Intl.DateTimeFormatOptions = {
+  timeZone: 'Asia/Shanghai',
+  hour12: false,
+};
+
+/** Format ISO timestamp for display in China Standard Time (UTC+8). */
+export function formatDateTimeCST(iso: string) {
+  return new Date(iso).toLocaleString('zh-CN', {
+    ...cstOptions,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+  });
+}
+
+/** Format ISO timestamp as HH:mm in CST (for charts). */
+export function formatTimeCST(iso: string) {
+  return new Date(iso).toLocaleTimeString('zh-CN', {
+    ...cstOptions,
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}

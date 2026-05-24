@@ -36,8 +36,8 @@ func DefaultSeeds() SeedFile {
 				BackupAPIBaseURLs: []string{"https://ai.liaobots1.work/v1", "https://ai.liaobots2.work/v1"},
 				AuthType:          "login_code",
 				APIKeyEnv:         "LIAOBOTS_API_KEY",
-				ClaimedModels:     []string{"gpt-4o", "claude-sonnet-4-5", "gemini-2.0-flash"},
-				HealthModel:       "gpt-4o-mini",
+				ClaimedModels:     append([]string(nil), MainstreamProbeModels...),
+				HealthModel:       DefaultHealthModel,
 				Tags:              []string{"聚合网关"},
 			},
 			{
@@ -46,8 +46,8 @@ func DefaultSeeds() SeedFile {
 				APIBaseURL:    "https://api.lingyaai.cn/v1",
 				AuthType:      "bearer_token",
 				APIKeyEnv:     "LINGYAAI_API_KEY",
-				ClaimedModels: []string{"gpt-4o", "claude-sonnet-4", "deepseek-chat"},
-				HealthModel:   "gpt-4o-mini",
+				ClaimedModels: append([]string(nil), MainstreamProbeModels...),
+				HealthModel:   DefaultHealthModel,
 				Tags:          []string{"One-API"},
 			},
 			{
@@ -56,8 +56,8 @@ func DefaultSeeds() SeedFile {
 				APIBaseURL:    "https://api.asiai.cloud/v1",
 				AuthType:      "bearer_token",
 				APIKeyEnv:     "ASIAI_API_KEY",
-				ClaimedModels: []string{"gpt-4o"},
-				HealthModel:   "gpt-4o-mini",
+				ClaimedModels: append([]string(nil), MainstreamProbeModels...),
+				HealthModel:   DefaultHealthModel,
 				Tags:          []string{"待验证"},
 			},
 			{
@@ -66,8 +66,8 @@ func DefaultSeeds() SeedFile {
 				APIBaseURL:    "https://www.nicegoal.ai/v1",
 				AuthType:      "bearer_token",
 				APIKeyEnv:     "NICEGOAL_API_KEY",
-				ClaimedModels: []string{"gpt-4o"},
-				HealthModel:   "gpt-4o-mini",
+				ClaimedModels: append([]string(nil), MainstreamProbeModels...),
+				HealthModel:   DefaultHealthModel,
 				Tags:          []string{"New API"},
 			},
 		},
@@ -101,7 +101,7 @@ func Seed(ctx context.Context, st *store.Store, enc *crypto.Encryptor, sf SeedFi
 
 		healthModel := seed.HealthModel
 		if healthModel == "" {
-			healthModel = "gpt-4o-mini"
+			healthModel = DefaultHealthModel
 		}
 
 		r := &store.Relay{
