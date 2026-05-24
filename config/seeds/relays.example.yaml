@@ -1,0 +1,39 @@
+relays:
+  - name: Liaobots
+    website_url: https://liaobots.work/zh
+    api_base_url: https://ai.liaobots.work/v1
+    backup_api_base_urls:
+      - https://ai.liaobots1.work/v1
+      - https://ai.liaobots2.work/v1
+    auth_type: login_code
+    api_key_env: LIAOBOTS_API_KEY
+    claimed_models: [gpt-4o, claude-sonnet-4-5, gemini-2.0-flash]
+    health_model: gpt-4o-mini
+    tags: [聚合网关]
+
+  - name: 灵芽 API
+    website_url: https://api.lingyaai.cn/
+    api_base_url: https://api.lingyaai.cn/v1
+    auth_type: bearer_token
+    api_key_env: LINGYAAI_API_KEY
+    claimed_models: [gpt-4o, claude-sonnet-4, deepseek-chat]
+    health_model: gpt-4o-mini
+    tags: [One-API]
+
+  - name: Asiai Cloud
+    website_url: https://api.asiai.cloud/
+    api_base_url: https://api.asiai.cloud/v1
+    auth_type: bearer_token
+    api_key_env: ASIAI_API_KEY
+    claimed_models: [gpt-4o]
+    health_model: gpt-4o-mini
+    tags: [待验证]
+
+  - name: NiceGoal
+    website_url: https://www.nicegoal.ai
+    api_base_url: https://www.nicegoal.ai/v1
+    auth_type: bearer_token
+    api_key_env: NICEGOAL_API_KEY
+    claimed_models: [gpt-4o]
+    health_model: gpt-4o-mini
+    tags: [New API]

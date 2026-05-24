@@ -1,0 +1,9 @@
+.env
+*.exe
+/bin/
+/dist/
+/web/node_modules/
+/web/.next/
+/web/out/
+.DS_Store
+config/seeds/relays.yaml
