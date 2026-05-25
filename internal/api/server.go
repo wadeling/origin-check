@@ -2,6 +2,7 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -94,8 +95,17 @@ func (s *Server) handleGetRelay(w http.ResponseWriter, r *http.Request) {
 	latency, ttft, _ := s.store.GetLatestPerfMetrics(r.Context(), id)
 
 	var authReport *store.AuthenticityReport
+	var authScore *float64
+	var authVerdict *store.Verdict
 	if len(relay.ClaimedModels) > 0 {
-		authReport, _ = s.store.GetLatestAuthenticityReport(r.Context(), id, relay.ClaimedModels[0])
+		if summary, _ := s.store.GetAuthenticitySummary(r.Context(), id, relay.ClaimedModels); summary != nil {
+			authScore = &summary.Score
+			authVerdict = &summary.Verdict
+		}
+		reports, _ := s.store.ListAuthenticityReports(r.Context(), id, relay.ClaimedModels, 1)
+		if len(reports) > 0 {
+			authReport = &reports[0]
+		}
 	}
 
 	writeJSON(w, http.StatusOK, map[string]interface{}{
@@ -104,6 +114,8 @@ func (s *Server) handleGetRelay(w http.ResponseWriter, r *http.Request) {
 		"availability_24h":     avail,
 		"latest_latency_ms":    latency,
 		"latest_ttft_ms":       ttft,
+		"authenticity_score":   authScore,
+		"authenticity_verdict": authVerdict,
 		"authenticity_report":  authReport,
 	})
 }
@@ -141,7 +153,17 @@ func (s *Server) handleRelayReports(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	reports, err := s.store.ListAuthenticityReports(r.Context(), id, 20)
+	relay, err := s.store.GetRelay(r.Context(), id)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err)
+		return
+	}
+	if relay == nil {
+		writeError(w, http.StatusNotFound, fmt.Errorf("relay not found"))
+		return
+	}
+
+	reports, err := s.store.ListAuthenticityReports(r.Context(), id, relay.ClaimedModels, 20)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, err)
 		return

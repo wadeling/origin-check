@@ -17,13 +17,14 @@ const (
 )
 
 type ExpectedTraits struct {
-	MustContain    []string `json:"must_contain,omitempty"`
-	MustNotContain []string `json:"must_not_contain,omitempty"`
-	MustMatchOne   []string `json:"must_match_one,omitempty"`
-	MustBeJSON     bool     `json:"must_be_json,omitempty"`
-	MaxLength      int      `json:"max_length,omitempty"`
-	WordCountMin   int      `json:"word_count_min,omitempty"`
-	WordCountMax   int      `json:"word_count_max,omitempty"`
+	MustContain             []string `json:"must_contain,omitempty"`
+	MustNotContain          []string `json:"must_not_contain,omitempty"`
+	MustMatchOne            []string `json:"must_match_one,omitempty"`
+	MustContainClaimedModel bool     `json:"must_contain_claimed_model,omitempty"`
+	MustBeJSON              bool     `json:"must_be_json,omitempty"`
+	MaxLength               int      `json:"max_length,omitempty"`
+	WordCountMin            int      `json:"word_count_min,omitempty"`
+	WordCountMax            int      `json:"word_count_max,omitempty"`
 }
 
 type Engine struct{}
@@ -33,9 +34,9 @@ func New() *Engine {
 }
 
 type AnalysisInput struct {
-	ClaimedModel   string
-	ResponseModel  string
-	PromptResults  []PromptResult
+	ClaimedModel  string
+	PromptResults []PromptResult
+	CacheResult   *probe.CacheProbeResult
 }
 
 type PromptResult struct {
@@ -48,16 +49,22 @@ func (e *Engine) Analyze(in AnalysisInput) store.AuthenticityReport {
 	totalWeight := 0.0
 	weightedScore := 0.0
 
-	// Metadata signal
-	metaScore := scoreMetadata(in.ClaimedModel, in.ResponseModel)
+	// Metadata signal (aggregate model field from all probe requests)
+	metaSamples := collectMetadataSamples(in.PromptResults, in.CacheResult)
+	meta := evaluateMetadata(in.ClaimedModel, metaSamples)
 	metaWeight := weightMetadata
-	signals = append(signals, store.SignalEvidence{
+	metaSignal := store.SignalEvidence{
 		Signal: "metadata",
-		Score:  metaScore,
+		Score:  meta.Score,
 		Weight: metaWeight,
-		Detail: metadataDetail(in.ClaimedModel, in.ResponseModel),
-	})
-	weightedScore += metaScore * metaWeight
+		Detail: meta.Detail,
+		Alert:  meta.Alert,
+	}
+	if meta.Log != "" {
+		metaSignal.Response = meta.Log
+	}
+	signals = append(signals, metaSignal)
+	weightedScore += meta.Score * metaWeight
 	totalWeight += metaWeight
 
 	// Prompt fingerprint signals
@@ -69,7 +76,7 @@ func (e *Engine) Analyze(in AnalysisInput) store.AuthenticityReport {
 		}
 		var traits ExpectedTraits
 		_ = json.Unmarshal(pr.Case.ExpectedTraits, &traits)
-		score := scoreTraits(pr.Response.Content, traits)
+		score := scoreTraits(pr.Response.Content, traits, in.ClaimedModel)
 		promptTotal += score
 		promptCount++
 		signals = append(signals, store.SignalEvidence{
@@ -106,6 +113,17 @@ func (e *Engine) Analyze(in AnalysisInput) store.AuthenticityReport {
 	weightedScore += capScore * weightCapability
 	totalWeight += weightCapability
 
+	cacheScore, cacheDetail := scoreCache(in.CacheResult)
+	signals = append(signals, store.SignalEvidence{
+		Signal:   "cache",
+		Score:    cacheScore,
+		Weight:   weightBaseline,
+		Detail:   cacheDetail,
+		Response: cacheEvidenceDetail(in.CacheResult),
+	})
+	weightedScore += cacheScore * weightBaseline
+	totalWeight += weightBaseline
+
 	finalScore := weightedScore / totalWeight
 	confidence := float64(promptCount) / float64(max(len(in.PromptResults), 1)) * 100
 
@@ -117,6 +135,10 @@ func (e *Engine) Analyze(in AnalysisInput) store.AuthenticityReport {
 		verdict = store.VerdictSuspicious
 	default:
 		verdict = store.VerdictFail
+	}
+
+	if meta.Alert == alertMetadataMissing && verdict == store.VerdictPass {
+		verdict = store.VerdictSuspicious
 	}
 
 	return store.AuthenticityReport{
@@ -146,14 +168,7 @@ func normalizeModel(m string) string {
 	return strings.ToLower(strings.TrimSpace(m))
 }
 
-func metadataDetail(claimed, response string) string {
-	if response == "" {
-		return "no response model in metadata"
-	}
-	return "claimed=" + claimed + ", response=" + response
-}
-
-func scoreTraits(content string, t ExpectedTraits) float64 {
+func scoreTraits(content string, t ExpectedTraits, claimedModel string) float64 {
 	content = strings.TrimSpace(content)
 	if content == "" {
 		return 0
@@ -161,6 +176,27 @@ func scoreTraits(content string, t ExpectedTraits) float64 {
 
 	score := 100.0
 	lower := strings.ToLower(content)
+
+	if t.MustContainClaimedModel && claimedModel != "" {
+		norm := normalizeModel(claimedModel)
+		resp := normalizeModel(content)
+		if !strings.Contains(resp, norm) && !strings.Contains(norm, resp) {
+			// allow partial token match e.g. gpt-5.5 in longer self-id line
+			parts := strings.FieldsFunc(norm, func(r rune) bool {
+				return r == '-' || r == '.' || r == '_'
+			})
+			found := false
+			for _, p := range parts {
+				if len(p) >= 3 && strings.Contains(resp, p) {
+					found = true
+					break
+				}
+			}
+			if !found {
+				score -= 35
+			}
+		}
+	}
 
 	for _, s := range t.MustContain {
 		if !strings.Contains(lower, strings.ToLower(s)) {

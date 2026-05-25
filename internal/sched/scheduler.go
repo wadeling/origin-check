@@ -5,7 +5,7 @@ import (
 	"log/slog"
 	"time"
 
-	"github.com/robfig/cron/v3"
+	"github.com/wadeling/origin-check/internal/config"
 	"github.com/wadeling/origin-check/internal/queue"
 	"github.com/wadeling/origin-check/internal/store"
 )
@@ -13,33 +13,54 @@ import (
 type Scheduler struct {
 	store *store.Store
 	queue *queue.Queue
-	cron  *cron.Cron
+	cfg   config.ScheduleConfig
 }
 
-func New(st *store.Store, q *queue.Queue) *Scheduler {
+func New(st *store.Store, q *queue.Queue, cfg config.ScheduleConfig) *Scheduler {
 	return &Scheduler{
 		store: st,
 		queue: q,
-		cron:  cron.New(cron.WithSeconds()),
+		cfg:   cfg,
 	}
 }
 
 func (s *Scheduler) Start(ctx context.Context) error {
-	_, _ = s.cron.AddFunc("0 */15 * * * *", func() { s.scheduleHealth(ctx) })
-	_, _ = s.cron.AddFunc("0 0 */6 * * *", func() { s.schedulePerformance(ctx) })
-	_, _ = s.cron.AddFunc("0 30 */6 * * *", func() { s.scheduleAuthenticity(ctx) })
+	slog.Info("scheduler started",
+		"health_interval", s.cfg.HealthInterval,
+		"performance_interval", s.cfg.PerformanceInterval,
+		"authenticity_interval", s.cfg.AuthenticityInterval,
+	)
 
-	s.cron.Start()
-	slog.Info("scheduler started")
-
-	// Run initial jobs on startup
-	go s.scheduleHealth(ctx)
-	go s.schedulePerformance(ctx)
-	go s.scheduleAuthenticity(ctx)
+	s.startLoop(ctx, "health", s.cfg.HealthInterval, s.cfg.HealthOnStartup, s.scheduleHealth)
+	s.startLoop(ctx, "performance", s.cfg.PerformanceInterval, s.cfg.PerformanceOnStartup, s.schedulePerformance)
+	s.startLoop(ctx, "authenticity", s.cfg.AuthenticityInterval, s.cfg.AuthenticityOnStartup, s.scheduleAuthenticity)
 
 	<-ctx.Done()
-	s.cron.Stop()
 	return ctx.Err()
+}
+
+func (s *Scheduler) startLoop(ctx context.Context, name string, interval time.Duration, onStartup bool, fn func(context.Context)) {
+	run := func(reason string) {
+		slog.Info("probe tick", "type", name, "reason", reason)
+		fn(ctx)
+	}
+
+	if onStartup {
+		go run("startup")
+	}
+
+	go func() {
+		ticker := time.NewTicker(interval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case <-ticker.C:
+				run("interval")
+			}
+		}
+	}()
 }
 
 func (s *Scheduler) scheduleHealth(ctx context.Context) {

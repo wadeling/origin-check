@@ -4,7 +4,7 @@ import { verdictLabel, type RelaySummary } from '@/lib/api';
 export function VerdictBadge({ verdict }: { verdict?: RelaySummary['authenticity_verdict'] }) {
   const { text, className } = verdictLabel(verdict);
   return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${className}`}>
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium backdrop-blur-sm ${className}`}>
       {text}
     </span>
   );
@@ -35,7 +35,7 @@ export function RelayTable({ relays }: { relays: RelaySummary[] }) {
               <td className="px-4 py-4">
                 <VerdictBadge verdict={relay.authenticity_verdict} />
                 {relay.authenticity_score != null && (
-                  <div className="mt-1 text-xs text-muted">{relay.authenticity_score.toFixed(0)} 分</div>
+                  <div className="mt-1 text-xs text-muted">近6次均 {relay.authenticity_score.toFixed(0)} 分</div>
                 )}
               </td>
               <td className="px-4 py-4 text-sm">{relay.latest_ttft_ms != null ? `${Math.round(relay.latest_ttft_ms)} ms` : '—'}</td>

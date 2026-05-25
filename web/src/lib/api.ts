@@ -22,6 +22,7 @@ export interface SignalEvidence {
   score: number;
   weight: number;
   detail: string;
+  alert?: string;
   prompt?: string;
   response?: string;
 }
@@ -58,6 +59,8 @@ export interface RelayDetailResponse {
   availability_24h?: number;
   latest_latency_ms?: number;
   latest_ttft_ms?: number;
+  authenticity_score?: number;
+  authenticity_verdict?: Verdict;
   authenticity_report?: AuthenticityReport;
 }
 
@@ -71,9 +74,11 @@ export interface MetricsResponse {
   }>;
   daily: Array<{
     date: string;
+    model?: string;
     avg_latency_ms?: number;
     avg_ttft_ms?: number;
     availability_pct?: number;
+    probe_count?: number;
   }>;
 }
 
@@ -111,13 +116,13 @@ export function getRelayReports(id: string) {
 export function verdictLabel(v: Verdict | undefined) {
   switch (v) {
     case 'pass':
-      return { text: '一致', className: 'text-pass bg-green-50 border-green-200' };
+      return { text: '一致', className: 'text-pass bg-green-500/10 border-green-500/30 dark:bg-green-500/15' };
     case 'suspicious':
-      return { text: '存疑', className: 'text-warn bg-yellow-50 border-yellow-200' };
+      return { text: '存疑', className: 'text-warn bg-yellow-500/10 border-yellow-500/30 dark:bg-yellow-500/15' };
     case 'fail':
-      return { text: '不符', className: 'text-fail bg-red-50 border-red-200' };
+      return { text: '不符', className: 'text-fail bg-red-500/10 border-red-500/30 dark:bg-red-500/15' };
     default:
-      return { text: '待测', className: 'text-muted bg-slate-50 border-slate-200' };
+      return { text: '待测', className: 'text-foreground-muted bg-surface-muted border-line' };
   }
 }
 
@@ -149,11 +154,11 @@ export function formatDateTimeCST(iso: string) {
   });
 }
 
-/** Format ISO timestamp as HH:mm in CST (for charts). */
-export function formatTimeCST(iso: string) {
-  return new Date(iso).toLocaleTimeString('zh-CN', {
-    ...cstOptions,
-    hour: '2-digit',
-    minute: '2-digit',
+/** Format ISO date for chart axis in CST (e.g. 5/24). */
+export function formatDateCST(iso: string) {
+  return new Date(iso).toLocaleDateString('zh-CN', {
+    timeZone: 'Asia/Shanghai',
+    month: 'numeric',
+    day: 'numeric',
   });
 }

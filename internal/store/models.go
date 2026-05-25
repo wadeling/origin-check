@@ -109,6 +109,7 @@ type SignalEvidence struct {
 	Score    float64 `json:"score"`
 	Weight   float64 `json:"weight"`
 	Detail   string  `json:"detail"`
+	Alert    string  `json:"alert,omitempty"`
 	Prompt   string  `json:"prompt,omitempty"`
 	Response string  `json:"response,omitempty"`
 }

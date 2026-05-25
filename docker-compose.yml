@@ -64,6 +64,10 @@ services:
     environment:
       DATABASE_URL: postgres://origin:origin@postgres:5432/origin_check?sslmode=disable
       REDIS_URL: redis://redis:6379/0
+      PROBE_HEALTH_INTERVAL: 15m
+      PROBE_PERFORMANCE_INTERVAL: 24h
+      PROBE_AUTHENTICITY_INTERVAL: 24h
+      PROBE_PERFORMANCE_ON_STARTUP: "false"
     depends_on:
       postgres:
         condition: service_healthy

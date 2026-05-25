@@ -201,11 +201,21 @@ func (s *Store) GetLatestAuthenticityReport(ctx context.Context, relayID uuid.UU
 	return &report, nil
 }
 
-func (s *Store) ListAuthenticityReports(ctx context.Context, relayID uuid.UUID, limit int) ([]AuthenticityReport, error) {
-	rows, err := s.pool.Query(ctx, `
-		SELECT id, relay_id, job_id, claimed_model, score, confidence, verdict, signals, created_at
-		FROM authenticity_reports WHERE relay_id = $1
-		ORDER BY created_at DESC LIMIT $2`, relayID, limit)
+func (s *Store) ListAuthenticityReports(ctx context.Context, relayID uuid.UUID, models []string, limit int) ([]AuthenticityReport, error) {
+	var rows pgx.Rows
+	var err error
+	if len(models) > 0 {
+		rows, err = s.pool.Query(ctx, `
+			SELECT id, relay_id, job_id, claimed_model, score, confidence, verdict, signals, created_at
+			FROM authenticity_reports
+			WHERE relay_id = $1 AND claimed_model = ANY($2)
+			ORDER BY created_at DESC LIMIT $3`, relayID, models, limit)
+	} else {
+		rows, err = s.pool.Query(ctx, `
+			SELECT id, relay_id, job_id, claimed_model, score, confidence, verdict, signals, created_at
+			FROM authenticity_reports WHERE relay_id = $1
+			ORDER BY created_at DESC LIMIT $2`, relayID, limit)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -225,6 +235,32 @@ func (s *Store) ListAuthenticityReports(ctx context.Context, relayID uuid.UUID, 
 		reports = append(reports, report)
 	}
 	return reports, rows.Err()
+}
+
+const authenticitySummaryFetchLimit = 9
+
+func (s *Store) GetAuthenticitySummary(ctx context.Context, relayID uuid.UUID, models []string) (*AuthenticitySummary, error) {
+	reports, err := s.ListAuthenticityReports(ctx, relayID, models, authenticitySummaryFetchLimit)
+	if err != nil {
+		return nil, err
+	}
+	return SummarizeAuthenticityReports(reports), nil
+}
+
+func (s *Store) DeleteAuthenticityReportsForModels(ctx context.Context, models []string) error {
+	if len(models) == 0 {
+		return nil
+	}
+	_, err := s.pool.Exec(ctx, `DELETE FROM authenticity_reports WHERE claimed_model = ANY($1)`, models)
+	return err
+}
+
+func (s *Store) DeleteProbeResultsForModels(ctx context.Context, models []string) error {
+	if len(models) == 0 {
+		return nil
+	}
+	_, err := s.pool.Exec(ctx, `DELETE FROM probe_results WHERE model = ANY($1)`, models)
+	return err
 }
 
 func (s *Store) GetProbeResults(ctx context.Context, relayID uuid.UUID, since time.Time, limit int) ([]ProbeResult, error) {
@@ -319,13 +355,13 @@ func (s *Store) ListRelaySummaries(ctx context.Context) ([]RelaySummary, error) 
 		}
 
 		if len(r.ClaimedModels) > 0 {
-			report, err := s.GetLatestAuthenticityReport(ctx, r.ID, r.ClaimedModels[0])
+			summary, err := s.GetAuthenticitySummary(ctx, r.ID, r.ClaimedModels)
 			if err != nil {
 				return nil, err
 			}
-			if report != nil {
-				sum.AuthenticityScore = &report.Score
-				sum.AuthenticityVerdict = &report.Verdict
+			if summary != nil {
+				sum.AuthenticityScore = &summary.Score
+				sum.AuthenticityVerdict = &summary.Verdict
 			}
 		}
 

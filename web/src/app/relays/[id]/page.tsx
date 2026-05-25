@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { AuthenticityReportView } from '@/components/AuthenticityReportView';
 import { MetricsChart } from '@/components/MetricsChart';
 import { VerdictBadge } from '@/components/RelayTable';
-import { formatMs, formatPct, formatDateTimeCST, getRelay, getRelayMetrics } from '@/lib/api';
+import { formatMs, formatPct, formatDateTimeCST, getRelay, getRelayMetrics, verdictLabel } from '@/lib/api';
 
 export default async function RelayDetailPage({ params }: { params: { id: string } }) {
   let data;
@@ -16,7 +16,7 @@ export default async function RelayDetailPage({ params }: { params: { id: string
     notFound();
   }
 
-  const { relay, recent_results, availability_24h, latest_latency_ms, latest_ttft_ms, authenticity_report } = data;
+  const { relay, recent_results, availability_24h, latest_latency_ms, latest_ttft_ms, authenticity_score, authenticity_verdict, authenticity_report } = data;
 
   return (
     <div className="space-y-8">
@@ -32,7 +32,7 @@ export default async function RelayDetailPage({ params }: { params: { id: string
             </p>
             <p className="mt-1 text-xs text-muted">API: {relay.api_base_url}</p>
           </div>
-          <VerdictBadge verdict={relay.authenticity_verdict ?? authenticity_report?.verdict} />
+          <VerdictBadge verdict={authenticity_verdict ?? relay.authenticity_verdict ?? authenticity_report?.verdict} />
         </div>
       </div>
 
@@ -43,7 +43,8 @@ export default async function RelayDetailPage({ params }: { params: { id: string
       </section>
 
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold">24 小时性能趋势</h2>
+        <h2 className="text-lg font-semibold">近 7 天性能趋势</h2>
+        <p className="mt-1 text-xs text-muted">基于每日 performance 探测汇总；可用率卡片仍为 health 探测 24 小时统计。</p>
         <div className="mt-4">
           <MetricsChart metrics={metrics} />
         </div>
@@ -51,7 +52,15 @@ export default async function RelayDetailPage({ params }: { params: { id: string
 
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">真伪鉴定报告</h2>
+          <div>
+            <h2 className="text-lg font-semibold">真伪鉴定报告</h2>
+            {authenticity_score != null && (
+              <p className="mt-1 text-xs text-muted">
+                综合近 6 次报告：{authenticity_score.toFixed(0)} 分
+                {authenticity_verdict ? ` · ${verdictLabel(authenticity_verdict).text}` : ''}
+              </p>
+            )}
+          </div>
           <Link href={`/relays/${params.id}/report`} className="text-sm text-accent hover:underline">
             查看历史报告 →
           </Link>

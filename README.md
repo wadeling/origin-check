@@ -65,9 +65,9 @@ docker compose up --build
 
 | 系列 | 模型 ID |
 |------|---------|
-| GPT-5.5 | `gpt-5.5`, `gpt-5.5-pro` |
+| GPT-5.5 | `gpt-5.5` |
 | Claude Opus 4.7 | `claude-opus-4-7` |
-| Gemini 3.x | `gemini-3.1-pro-preview` |
+| Gemini 3.5 | `gemini-3.5-flash` |
 | 可用性探测（轻量） | `gpt-5.4-mini` |
 
 | 名称 | 官网 | API Base |
@@ -86,6 +86,13 @@ docker compose up --build
 
 ## 调度策略
 
-- Health：每 15 分钟
-- Performance：每 6 小时（整点）
-- Authenticity：每 6 小时（整点后 30 分），启动时立即跑一轮
+通过环境变量配置（Go duration 格式，如 `15m`、`24h`）：
+
+| 变量 | 默认 | 说明 |
+|------|------|------|
+| `PROBE_HEALTH_INTERVAL` | `15m` | 可用性轻量探测 |
+| `PROBE_PERFORMANCE_INTERVAL` | `24h` | 性能探测（默认每天一次） |
+| `PROBE_AUTHENTICITY_INTERVAL` | `24h` | 真伪鉴定 |
+| `PROBE_*_ON_STARTUP` | health 开，performance/auth 关 | 服务启动时是否立即跑一轮 |
+
+示例：`.env` 中设置 `PROBE_PERFORMANCE_INTERVAL=12h` 改为每 12 小时测一次性能。

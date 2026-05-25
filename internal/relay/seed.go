@@ -129,5 +129,12 @@ func Seed(ctx context.Context, st *store.Store, enc *crypto.Encryptor, sf SeedFi
 			return err
 		}
 	}
-	return nil
+	return PurgeLegacyData(ctx, st)
+}
+
+func PurgeLegacyData(ctx context.Context, st *store.Store) error {
+	if err := st.DeleteAuthenticityReportsForModels(ctx, LegacyModels); err != nil {
+		return err
+	}
+	return st.DeleteProbeResultsForModels(ctx, LegacyModels)
 }

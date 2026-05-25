@@ -17,8 +17,7 @@ func TestAnalyzePassWhenMetadataAndPromptsMatch(t *testing.T) {
 	})
 
 	report := engine.Analyze(analyzer.AnalysisInput{
-		ClaimedModel:  "gpt-5.5",
-		ResponseModel: "gpt-5.5",
+		ClaimedModel: "gpt-5.5",
 		PromptResults: []analyzer.PromptResult{
 			{
 				Case: store.PromptCase{
@@ -27,6 +26,12 @@ func TestAnalyzePassWhenMetadataAndPromptsMatch(t *testing.T) {
 					Weight:         1,
 				},
 				Response: &probe.Result{Content: "391", ResponseModel: "gpt-5.5"},
+			},
+		},
+		CacheResult: &probe.CacheProbeResult{
+			Runs: []probe.CacheRun{
+				{LatencyMS: 500, ContentHash: "a"},
+				{LatencyMS: 480, ContentHash: "b"},
 			},
 		},
 	})
@@ -42,9 +47,10 @@ func TestAnalyzePassWhenMetadataAndPromptsMatch(t *testing.T) {
 func TestAnalyzeFailWhenMetadataMismatch(t *testing.T) {
 	engine := analyzer.New()
 	report := engine.Analyze(analyzer.AnalysisInput{
-		ClaimedModel:  "gpt-5.5",
-		ResponseModel: "gpt-3.5-turbo",
-		PromptResults: []analyzer.PromptResult{},
+		ClaimedModel: "gpt-5.5",
+		PromptResults: []analyzer.PromptResult{
+			{Response: &probe.Result{ResponseModel: "gpt-3.5-turbo"}},
+		},
 	})
 
 	if report.Score > 60 {

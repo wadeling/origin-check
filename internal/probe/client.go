@@ -14,22 +14,32 @@ import (
 	"time"
 )
 
-const userAgent = "OriginCheck/1.0"
+const defaultUserAgent = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36"
+
+type ChatOpts struct {
+	Stream      bool
+	Temperature *float64
+	MaxTokens   *int
+}
 
 type Client struct {
 	httpClient *http.Client
+	userAgent  string
 }
 
 func NewClient() *Client {
 	return &Client{
 		httpClient: &http.Client{Timeout: 120 * time.Second},
+		userAgent:  defaultUserAgent,
 	}
 }
 
 type ChatRequest struct {
-	Model    string    `json:"model"`
-	Messages []Message `json:"messages"`
-	Stream   bool      `json:"stream"`
+	Model       string    `json:"model"`
+	Messages    []Message `json:"messages"`
+	Stream      bool      `json:"stream"`
+	Temperature *float64  `json:"temperature,omitempty"`
+	MaxTokens   *int      `json:"max_tokens,omitempty"`
 }
 
 type Message struct {
@@ -74,6 +84,8 @@ type Result struct {
 	HTTPStatus    int
 	Error         string
 	ResponseHash  string
+	ContentHash   string
+	CacheHeaders  string
 }
 
 type Endpoint struct {
@@ -83,10 +95,14 @@ type Endpoint struct {
 }
 
 func (c *Client) ChatCompletion(ctx context.Context, ep Endpoint, model, prompt string, stream bool) (*Result, error) {
+	return c.ChatCompletionOpts(ctx, ep, model, prompt, ChatOpts{Stream: stream})
+}
+
+func (c *Client) ChatCompletionOpts(ctx context.Context, ep Endpoint, model, prompt string, opts ChatOpts) (*Result, error) {
 	urls := append([]string{ep.BaseURL}, ep.Backups...)
 	var lastErr error
 	for _, base := range urls {
-		res, err := c.doChat(ctx, base, ep.APIKey, model, prompt, stream)
+		res, err := c.doChat(ctx, base, ep.APIKey, model, prompt, opts)
 		if err == nil {
 			return res, nil
 		}
@@ -95,14 +111,16 @@ func (c *Client) ChatCompletion(ctx context.Context, ep Endpoint, model, prompt 
 	return nil, lastErr
 }
 
-func (c *Client) doChat(ctx context.Context, baseURL, apiKey, model, prompt string, stream bool) (*Result, error) {
+func (c *Client) doChat(ctx context.Context, baseURL, apiKey, model, prompt string, opts ChatOpts) (*Result, error) {
 	baseURL = strings.TrimRight(baseURL, "/")
 	url := baseURL + "/chat/completions"
 
 	body, _ := json.Marshal(ChatRequest{
-		Model: model,
-		Messages: []Message{{Role: "user", Content: prompt}},
-		Stream: stream,
+		Model:       model,
+		Messages:    []Message{{Role: "user", Content: prompt}},
+		Stream:      opts.Stream,
+		Temperature: opts.Temperature,
+		MaxTokens:   opts.MaxTokens,
 	})
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
@@ -111,7 +129,8 @@ func (c *Client) doChat(ctx context.Context, baseURL, apiKey, model, prompt stri
 	}
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+apiKey)
-	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", c.userAgent)
 
 	start := time.Now()
 	resp, err := c.httpClient.Do(req)
@@ -120,7 +139,7 @@ func (c *Client) doChat(ctx context.Context, baseURL, apiKey, model, prompt stri
 	}
 	defer resp.Body.Close()
 
-	if stream {
+	if opts.Stream {
 		return c.parseStream(resp, start)
 	}
 	return c.parseNonStream(resp, start)
@@ -163,6 +182,8 @@ func (c *Client) parseNonStream(resp *http.Response, start time.Time) (*Result, 
 		LatencyMS:     latency,
 		HTTPStatus:    resp.StatusCode,
 		ResponseHash:  hash,
+		ContentHash:   hashContent([]byte(strings.TrimSpace(content))),
+		CacheHeaders:  FormatCacheHeaderHints(resp.Header),
 	}
 	if chat.Usage != nil {
 		res.InputTokens = &chat.Usage.PromptTokens
@@ -233,6 +254,8 @@ func (c *Client) parseStream(resp *http.Response, start time.Time) (*Result, err
 		TTFTMS:        ttft,
 		HTTPStatus:    resp.StatusCode,
 		ResponseHash:  hash,
+		ContentHash:   hashContent([]byte(strings.TrimSpace(full))),
+		CacheHeaders:  FormatCacheHeaderHints(resp.Header),
 	}
 	if outputTokens > 0 && ttft != nil {
 		tpot := float64(total-*ttft) / float64(outputTokens)
@@ -251,7 +274,8 @@ func (c *Client) ListModels(ctx context.Context, ep Endpoint) ([]string, error) 
 		return nil, err
 	}
 	req.Header.Set("Authorization", "Bearer "+ep.APIKey)
-	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", c.userAgent)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

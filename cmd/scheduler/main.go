@@ -51,7 +51,13 @@ func main() {
 		slog.Warn("seed relays", "error", err)
 	}
 
-	scheduler := sched.New(st, q)
+	scheduleCfg, err := config.LoadScheduleConfig()
+	if err != nil {
+		slog.Error("load schedule config", "error", err)
+		os.Exit(1)
+	}
+
+	scheduler := sched.New(st, q, scheduleCfg)
 	if err := scheduler.Start(ctx); err != nil && err != context.Canceled {
 		slog.Error("scheduler stopped", "error", err)
 		os.Exit(1)

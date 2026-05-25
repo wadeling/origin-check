@@ -174,8 +174,9 @@ func (w *Worker) runAuthenticityProbe(ctx context.Context, relay *store.Relay, p
 		return err
 	}
 
+	cacheResult := w.probe.RunCacheProbe(ctx, ep, model, probe.DefaultCacheRepeats)
+
 	var promptResults []analyzer.PromptResult
-	var lastResponseModel string
 
 	for _, c := range cases {
 		res, err := w.probe.ChatCompletion(ctx, ep, model, c.Prompt, false)
@@ -183,9 +184,6 @@ func (w *Worker) runAuthenticityProbe(ctx context.Context, relay *store.Relay, p
 			continue
 		}
 		promptResults = append(promptResults, analyzer.PromptResult{Case: c, Response: res})
-		if res.ResponseModel != "" {
-			lastResponseModel = res.ResponseModel
-		}
 		if err := w.saveProbeResult(ctx, payload, relay, model, store.JobAuthenticity, false, res); err != nil {
 			return err
 		}
@@ -193,8 +191,8 @@ func (w *Worker) runAuthenticityProbe(ctx context.Context, relay *store.Relay, p
 
 	report := w.analyzer.Analyze(analyzer.AnalysisInput{
 		ClaimedModel:  model,
-		ResponseModel: lastResponseModel,
 		PromptResults: promptResults,
+		CacheResult:   cacheResult,
 	})
 	report.RelayID = relay.ID
 	jobID := payload.JobID
