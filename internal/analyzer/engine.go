@@ -51,7 +51,7 @@ func (e *Engine) Analyze(in AnalysisInput) store.AuthenticityReport {
 
 	// Metadata signal (aggregate model field from all probe requests)
 	metaSamples := collectMetadataSamples(in.PromptResults, in.CacheResult)
-	meta := evaluateMetadata(in.ClaimedModel, metaSamples)
+	meta := evaluateMetadata(in.ClaimedModel, metaSamples, in.PromptResults)
 	metaWeight := weightMetadata
 	metaSignal := store.SignalEvidence{
 		Signal: "metadata",
@@ -140,6 +140,9 @@ func (e *Engine) Analyze(in AnalysisInput) store.AuthenticityReport {
 	if meta.Alert == alertMetadataMissing && verdict == store.VerdictPass {
 		verdict = store.VerdictSuspicious
 	}
+	if meta.Alert == alertMetadataSelfReportMismatch && verdict == store.VerdictPass {
+		verdict = store.VerdictSuspicious
+	}
 
 	return store.AuthenticityReport{
 		ClaimedModel: in.ClaimedModel,
@@ -156,6 +159,9 @@ func scoreMetadata(claimed, response string) float64 {
 	}
 	if normalizeModel(claimed) == normalizeModel(response) {
 		return 100
+	}
+	if modelsConflict(claimed, response) {
+		return 20
 	}
 	if strings.Contains(normalizeModel(response), normalizeModel(claimed)) ||
 		strings.Contains(normalizeModel(claimed), normalizeModel(response)) {
@@ -178,23 +184,9 @@ func scoreTraits(content string, t ExpectedTraits, claimedModel string) float64 
 	lower := strings.ToLower(content)
 
 	if t.MustContainClaimedModel && claimedModel != "" {
-		norm := normalizeModel(claimedModel)
-		resp := normalizeModel(content)
-		if !strings.Contains(resp, norm) && !strings.Contains(norm, resp) {
-			// allow partial token match e.g. gpt-5.5 in longer self-id line
-			parts := strings.FieldsFunc(norm, func(r rune) bool {
-				return r == '-' || r == '.' || r == '_'
-			})
-			found := false
-			for _, p := range parts {
-				if len(p) >= 3 && strings.Contains(resp, p) {
-					found = true
-					break
-				}
-			}
-			if !found {
-				score -= 35
-			}
+		selfScore := scoreSelfReportedModel(claimedModel, content)
+		if selfScore < 100 {
+			score = selfScore
 		}
 	}
 

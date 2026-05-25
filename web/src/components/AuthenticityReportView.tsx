@@ -7,16 +7,22 @@ function metadataAlertLabel(alert?: string) {
       return { text: 'API metadata 缺失', className: 'text-fail font-medium' };
     case 'metadata_partial':
       return { text: 'API metadata 部分缺失', className: 'text-warn font-medium' };
+    case 'metadata_self_report_mismatch':
+      return { text: 'metadata 与自报模型不一致', className: 'text-fail font-medium' };
     default:
       return null;
   }
 }
 
 function signalBorderClass(signal: AuthenticityReport['signals'][0]) {
-  if (signal.signal !== 'metadata') return 'border-slate-200';
-  if (signal.alert === 'metadata_missing') return 'border-red-300 bg-red-50/50';
-  if (signal.alert === 'metadata_partial') return 'border-yellow-300 bg-yellow-50/50';
-  return 'border-slate-200';
+  if (signal.signal !== 'metadata') return 'border-line';
+  if (signal.alert === 'metadata_missing' || signal.alert === 'metadata_self_report_mismatch') {
+    return 'border-red-300 bg-red-50/50 dark:border-red-800 dark:bg-red-950/30';
+  }
+  if (signal.alert === 'metadata_partial') {
+    return 'border-yellow-300 bg-yellow-50/50 dark:border-yellow-800 dark:bg-yellow-950/30';
+  }
+  return 'border-line';
 }
 
 export function AuthenticityReportView({ report }: { report: AuthenticityReport }) {
@@ -49,11 +55,14 @@ export function AuthenticityReportView({ report }: { report: AuthenticityReport 
               {signal.signal === 'metadata' && signal.alert === 'metadata_missing' && (
                 <span className="ml-2 text-sm text-fail">（metadata 缺失）</span>
               )}
+              {signal.signal === 'metadata' && signal.alert === 'metadata_self_report_mismatch' && (
+                <span className="ml-2 text-sm text-fail">（metadata 与自报不符）</span>
+              )}
               {signal.signal === 'metadata' && signal.alert === 'metadata_partial' && (
                 <span className="ml-2 text-sm text-warn">（部分缺失）</span>
               )}
             </summary>
-            <p className={`mt-2 text-sm ${signal.alert === 'metadata_missing' ? 'text-fail' : 'text-muted'}`}>
+            <p className={`mt-2 text-sm ${signal.alert === 'metadata_missing' || signal.alert === 'metadata_self_report_mismatch' ? 'text-fail' : 'text-muted'}`}>
               {signal.detail}
             </p>
             {signal.response && (signal.response.includes('\n') || signal.signal === 'metadata' || signal.signal === 'cache') ? (

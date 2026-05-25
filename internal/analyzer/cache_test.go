@@ -34,10 +34,10 @@ func TestScoreCacheSuspicious(t *testing.T) {
 
 func TestScoreTraitsClaimedModel(t *testing.T) {
 	traits := ExpectedTraits{MustContainClaimedModel: true}
-	if score := scoreTraits("gpt-5.5", traits, "gpt-5.5"); score < 95 {
+	if score := scoreTraits("claude-opus-4-7", traits, "claude-opus-4-7"); score < 95 {
 		t.Fatalf("expected match, got %v", score)
 	}
-	if score := scoreTraits("I am a helpful assistant", traits, "claude-opus-4-7"); score > 80 {
-		t.Fatalf("expected penalty for mismatch, got %v", score)
+	if score := scoreTraits("claude-sonnet-4-5", traits, "claude-opus-4-7"); score > 20 {
+		t.Fatalf("expected penalty for tier mismatch, got %v", score)
 	}
 }

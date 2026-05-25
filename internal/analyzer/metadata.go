@@ -57,7 +57,7 @@ type metadataEvaluation struct {
 	Log    string
 }
 
-func evaluateMetadata(claimed string, samples []metadataSample) metadataEvaluation {
+func evaluateMetadata(claimed string, samples []metadataSample, promptResults []PromptResult) metadataEvaluation {
 	if len(samples) == 0 {
 		return metadataEvaluation{
 			Score:  25,
@@ -116,12 +116,29 @@ func evaluateMetadata(claimed string, samples []metadataSample) metadataEvaluati
 		total,
 	)
 
-	return metadataEvaluation{
+	result := metadataEvaluation{
 		Score:  round(score),
 		Detail: detail,
 		Alert:  alert,
 		Log:    log,
 	}
+
+	if pr := findPromptResult(promptResults, "model_self_id"); pr != nil && pr.Response != nil {
+		crossScore, crossAlert, crossDetail := scoreMetadataSelfReportCrossCheck(
+			claimed,
+			pr.Response.ResponseModel,
+			pr.Response.Content,
+		)
+		if crossAlert != "" {
+			result.Alert = crossAlert
+			result.Detail = detail + "; " + crossDetail
+			if crossScore < result.Score {
+				result.Score = round(crossScore)
+			}
+		}
+	}
+
+	return result
 }
 
 func uniqueNormalizedModels(models []string) []string {
