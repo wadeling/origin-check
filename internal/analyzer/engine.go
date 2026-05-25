@@ -137,8 +137,13 @@ func (e *Engine) Analyze(in AnalysisInput) store.AuthenticityReport {
 		verdict = store.VerdictFail
 	}
 
-	if meta.Alert == alertMetadataMissing && verdict == store.VerdictPass {
-		verdict = store.VerdictSuspicious
+	if meta.Alert == alertMetadataMissing {
+		if verdict == store.VerdictPass {
+			verdict = store.VerdictSuspicious
+		}
+		if meta.Score <= metadataScoreAllMissing+5 && finalScore < 65 {
+			verdict = store.VerdictFail
+		}
 	}
 	if meta.Alert == alertMetadataSelfReportMismatch && verdict == store.VerdictPass {
 		verdict = store.VerdictSuspicious
@@ -155,7 +160,7 @@ func (e *Engine) Analyze(in AnalysisInput) store.AuthenticityReport {
 
 func scoreMetadata(claimed, response string) float64 {
 	if response == "" {
-		return 50
+		return metadataScoreAllMissing
 	}
 	if normalizeModel(claimed) == normalizeModel(response) {
 		return 100

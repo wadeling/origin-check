@@ -15,7 +15,7 @@ func TestEvaluateMetadataMissing(t *testing.T) {
 	if meta.Alert != alertMetadataMissing {
 		t.Fatalf("expected metadata_missing alert, got %q", meta.Alert)
 	}
-	if meta.Score > 30 {
+	if meta.Score > 15 {
 		t.Fatalf("expected low score, got %v", meta.Score)
 	}
 }
@@ -29,8 +29,8 @@ func TestEvaluateMetadataFromAllRequests(t *testing.T) {
 	if meta.Alert != alertMetadataPartial {
 		t.Fatalf("expected metadata_partial alert, got %q", meta.Alert)
 	}
-	if meta.Score < 70 {
-		t.Fatalf("expected decent score with mostly matching models, got %v", meta.Score)
+	if meta.Score < 60 || meta.Score > 75 {
+		t.Fatalf("expected proportional score with mostly matching models, got %v", meta.Score)
 	}
 }
 

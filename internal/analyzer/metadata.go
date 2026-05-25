@@ -11,6 +11,9 @@ import (
 const (
 	alertMetadataMissing = "metadata_missing"
 	alertMetadataPartial = "metadata_partial"
+
+	// metadataScoreAllMissing is used when no API response includes a model field.
+	metadataScoreAllMissing = 10
 )
 
 type metadataSample struct {
@@ -60,7 +63,7 @@ type metadataEvaluation struct {
 func evaluateMetadata(claimed string, samples []metadataSample, promptResults []PromptResult) metadataEvaluation {
 	if len(samples) == 0 {
 		return metadataEvaluation{
-			Score:  25,
+			Score:  metadataScoreAllMissing,
 			Detail: "no successful probe responses to inspect API metadata",
 			Alert:  alertMetadataMissing,
 		}
@@ -84,9 +87,9 @@ func evaluateMetadata(claimed string, samples []metadataSample, promptResults []
 
 	if len(withModel) == 0 {
 		return metadataEvaluation{
-			Score: 25,
+			Score: metadataScoreAllMissing,
 			Detail: fmt.Sprintf(
-				"0/%d requests returned the API model field; official OpenAI-compatible APIs always include model in JSON metadata",
+				"0/%d requests returned the API model field; opaque gateways without model metadata are suspicious (official APIs always include model)",
 				total,
 			),
 			Alert: alertMetadataMissing,
@@ -97,15 +100,13 @@ func evaluateMetadata(claimed string, samples []metadataSample, promptResults []
 	unique := uniqueNormalizedModels(withModel)
 	matchScore := scoreModelsAgainstClaimed(claimed, unique)
 
-	score := matchScore
+	score := matchScore * float64(len(withModel)) / float64(total)
 	alert := ""
 	if missing > 0 {
 		alert = alertMetadataPartial
-		penalty := float64(missing) / float64(total) * 35
-		score -= penalty
-		if score < 0 {
-			score = 0
-		}
+	}
+	if score < metadataScoreAllMissing {
+		score = metadataScoreAllMissing
 	}
 
 	detail := fmt.Sprintf(
@@ -162,7 +163,7 @@ func uniqueNormalizedModels(models []string) []string {
 
 func scoreModelsAgainstClaimed(claimed string, unique []string) float64 {
 	if len(unique) == 0 {
-		return 25
+		return metadataScoreAllMissing
 	}
 	if len(unique) > 1 {
 		return 30
