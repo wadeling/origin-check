@@ -116,6 +116,23 @@ func (s *Store) CreateJob(ctx context.Context, job *ProbeJob) error {
 	).Scan(&job.ID, &job.CreatedAt)
 }
 
+func (s *Store) GetJob(ctx context.Context, id uuid.UUID) (*ProbeJob, error) {
+	var job ProbeJob
+	err := s.pool.QueryRow(ctx, `
+		SELECT id, relay_id, job_type, model, scheduled_at, started_at, completed_at, status, error, created_at
+		FROM probe_jobs WHERE id = $1`, id).Scan(
+		&job.ID, &job.RelayID, &job.JobType, &job.Model, &job.ScheduledAt,
+		&job.StartedAt, &job.CompletedAt, &job.Status, &job.Error, &job.CreatedAt,
+	)
+	if err == pgx.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &job, nil
+}
+
 func (s *Store) UpdateJobStatus(ctx context.Context, id uuid.UUID, status JobStatus, errMsg *string) error {
 	now := time.Now()
 	var query string

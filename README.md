@@ -96,3 +96,40 @@ docker compose up --build
 | `PROBE_*_ON_STARTUP` | health 开，performance/auth 关 | 服务启动时是否立即跑一轮 |
 
 示例：`.env` 中设置 `PROBE_PERFORMANCE_INTERVAL=12h` 改为每 12 小时测一次性能。
+
+## 手动触发探测（CLI）
+
+服务运行后，可立即将探测任务入队并由 worker 执行（无需等定时调度）。
+
+### 本地
+
+```bash
+# 列出中转站
+go run ./cmd/trigger -list
+
+# 对 Liaobots 跑全部 claimed models 真伪鉴定（默认 -wait 阻塞直到完成）
+go run ./cmd/trigger -relay Liaobots -type authenticity
+
+# 只测单个模型，不入队后等待
+go run ./cmd/trigger -relay Liaobots -type authenticity -model gpt-5.5 -wait=false
+
+# 性能 / 可用性
+go run ./cmd/trigger -relay Liaobots -type performance
+go run ./cmd/trigger -relay Liaobots -type health
+```
+
+### Docker（worker 容器内已包含 `/bin/trigger`）
+
+```bash
+# 查看收录的中转站
+docker exec origin-check-worker-1 /bin/trigger -list
+
+# 立即跑 Liaobots 真伪鉴定（3 个旗舰模型各一条任务）
+docker exec origin-check-worker-1 /bin/trigger -relay Liaobots -type authenticity
+
+# 只测 Claude Opus
+docker exec origin-check-worker-1 /bin/trigger -relay "Liaobots" -type auth -model claude-opus-4-7
+```
+
+`-type` 可选：`authenticity`（别名 `auth`）、`performance`（`perf`）、`health`。  
+默认对所有 `claimed_models` 各 enqueue 一条任务；worker 必须处于运行状态。

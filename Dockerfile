@@ -7,6 +7,7 @@ COPY . .
 RUN CGO_ENABLED=0 go build -o /bin/api ./cmd/api
 RUN CGO_ENABLED=0 go build -o /bin/worker ./cmd/worker
 RUN CGO_ENABLED=0 go build -o /bin/scheduler ./cmd/scheduler
+RUN CGO_ENABLED=0 go build -o /bin/trigger ./cmd/trigger
 
 FROM alpine:3.21 AS api
 RUN apk add --no-cache ca-certificates
@@ -17,6 +18,7 @@ CMD ["/bin/api"]
 FROM alpine:3.21 AS worker
 RUN apk add --no-cache ca-certificates
 COPY --from=builder /bin/worker /bin/worker
+COPY --from=builder /bin/trigger /bin/trigger
 CMD ["/bin/worker"]
 
 FROM alpine:3.21 AS scheduler
