@@ -10,7 +10,7 @@ import (
 
 func TestModelsForJobAuthenticityAllClaimed(t *testing.T) {
 	relay := store.Relay{
-		ClaimedModels: []string{"gpt-5.5", "claude-opus-4-7"},
+		ClaimedModels: []string{"gpt-5.5", "claude-opus-4-8"},
 		HealthModel:   "gpt-5.4-mini",
 	}
 	models := trigger.ModelsForJob(relay, store.JobAuthenticity, "")
@@ -31,9 +31,9 @@ func TestModelsForJobHealthUsesHealthModel(t *testing.T) {
 }
 
 func TestModelsForJobSingleFilter(t *testing.T) {
-	relay := store.Relay{ClaimedModels: []string{"gpt-5.5", "claude-opus-4-7"}}
-	models := trigger.ModelsForJob(relay, store.JobAuthenticity, "claude-opus-4-7")
-	if len(models) != 1 || models[0] != "claude-opus-4-7" {
+	relay := store.Relay{ClaimedModels: []string{"gpt-5.5", "claude-opus-4-8"}}
+	models := trigger.ModelsForJob(relay, store.JobAuthenticity, "claude-opus-4-8")
+	if len(models) != 1 || models[0] != "claude-opus-4-8" {
 		t.Fatalf("unexpected models: %v", models)
 	}
 }

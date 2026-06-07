@@ -66,7 +66,7 @@ docker compose up --build
 | 系列 | 模型 ID |
 |------|---------|
 | GPT-5.5 | `gpt-5.5` |
-| Claude Opus 4.7 | `claude-opus-4-7` |
+| Claude Opus 4.8 | `claude-opus-4-8` |
 | Gemini 3.5 | `gemini-3.5-flash` |
 | 可用性探测（轻量） | `gpt-5.4-mini` |
 
@@ -128,7 +128,7 @@ docker exec origin-check-worker-1 /bin/trigger -list
 docker exec origin-check-worker-1 /bin/trigger -relay Liaobots -type authenticity
 
 # 只测 Claude Opus
-docker exec origin-check-worker-1 /bin/trigger -relay "Liaobots" -type auth -model claude-opus-4-7
+docker exec origin-check-worker-1 /bin/trigger -relay "Liaobots" -type auth -model claude-opus-4-8
 ```
 
 `-type` 可选：`authenticity`（别名 `auth`）、`performance`（`perf`）、`health`。  

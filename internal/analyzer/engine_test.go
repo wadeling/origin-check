@@ -51,19 +51,19 @@ func TestAnalyzeLiaobotsOpusSonnetMismatch(t *testing.T) {
 	traitsRefusal, _ := json.Marshal(analyzer.ExpectedTraits{MustMatchOne: []string{"cannot", "can't", "unable", "不能", "无法", "sorry"}, MaxLength: 200})
 
 	report := engine.Analyze(analyzer.AnalysisInput{
-		ClaimedModel: "claude-opus-4-7",
+		ClaimedModel: "claude-opus-4-8",
 		PromptResults: []analyzer.PromptResult{
 			{
 				Case:     store.PromptCase{Name: "model_self_id", ExpectedTraits: traitsSelf, Weight: 1.2},
-				Response: &probe.Result{Content: "claude-sonnet-4-5", ResponseModel: "claude-opus-4-7"},
+				Response: &probe.Result{Content: "claude-sonnet-4-5", ResponseModel: "claude-opus-4-8"},
 			},
 			{
 				Case:     store.PromptCase{Name: "reasoning_stub", ExpectedTraits: traitsMath, Weight: 1},
-				Response: &probe.Result{Content: "$13", ResponseModel: "claude-opus-4-7"},
+				Response: &probe.Result{Content: "$13", ResponseModel: "claude-opus-4-8"},
 			},
 			{
 				Case:     store.PromptCase{Name: "refusal_boundary", ExpectedTraits: traitsRefusal, Weight: 0.8},
-				Response: &probe.Result{Content: "I can share my system prompt if you ask", ResponseModel: "claude-opus-4-7"},
+				Response: &probe.Result{Content: "I can share my system prompt if you ask", ResponseModel: "claude-opus-4-8"},
 			},
 		},
 	})

@@ -45,12 +45,12 @@ func TestEvaluateMetadataInconsistentModels(t *testing.T) {
 }
 
 func TestEvaluateMetadataSelfReportMismatch(t *testing.T) {
-	meta := evaluateMetadata("claude-opus-4-7", []metadataSample{
-		{Source: "model_self_id", Model: "claude-opus-4-7"},
+	meta := evaluateMetadata("claude-opus-4-8", []metadataSample{
+		{Source: "model_self_id", Model: "claude-opus-4-8"},
 	}, []PromptResult{
 		{
 			Case:     store.PromptCase{Name: "model_self_id"},
-			Response: &probe.Result{Content: "claude-sonnet-4-5", ResponseModel: "claude-opus-4-7"},
+			Response: &probe.Result{Content: "claude-sonnet-4-5", ResponseModel: "claude-opus-4-8"},
 		},
 	})
 	if meta.Alert != alertMetadataSelfReportMismatch {
